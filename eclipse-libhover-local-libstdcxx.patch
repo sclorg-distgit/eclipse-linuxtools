@@ -1,0 +1,26 @@
+diff --git a/libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx/build.properties b/libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx/build.properties
+index b901542..6f62a0d 100644
+--- a/libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx/build.properties
++++ b/libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx/build.properties
+@@ -4,6 +4,7 @@
+                plugin.xml,\
+                toc.xml,\
+ 	       about.html,\
++	       data,\
+                plugin.properties
+ src.includes = about.html,\
+                src/
+diff --git a/libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx/plugin.xml b/libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx/plugin.xml
+index 38a5b81..89c9a51 100644
+--- a/libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx/plugin.xml
++++ b/libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx/plugin.xml
+@@ -7,7 +7,7 @@
+          point="org.eclipse.linuxtools.cdt.libhover.library">
+       <library
+             docs="https://gcc.gnu.org/onlinedocs/libstdc++/manual/index.html"
+-            location="http://www.sourceware.org/eclipse/libhover/libstdc++-v3.libhover"
++            location="./data/libstdc++-v3.libhover"
+             name="libstdc++ library"
+             type="C++">
+       </library>
+

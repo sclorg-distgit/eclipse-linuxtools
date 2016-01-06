@@ -1,0 +1,75 @@
+diff -up org.eclipse.linuxtools-4.1.0/perf/org.eclipse.linuxtools.perf/src/org/eclipse/linuxtools/internal/perf/PerfCore.java.fix org.eclipse.linuxtools-4.1.0/perf/org.eclipse.linuxtools.perf/src/org/eclipse/linuxtools/internal/perf/PerfCore.java
+--- org.eclipse.linuxtools-4.1.0/perf/org.eclipse.linuxtools.perf/src/org/eclipse/linuxtools/internal/perf/PerfCore.java.fix	2015-11-04 11:46:30.335726055 -0500
++++ org.eclipse.linuxtools-4.1.0/perf/org.eclipse.linuxtools.perf/src/org/eclipse/linuxtools/internal/perf/PerfCore.java	2015-11-04 12:28:20.579408610 -0500
+@@ -333,6 +333,13 @@ public class PerfCore {
+             } catch (CoreException e) { }
+         }
+ 
++        /*
++         * Some versions of perf annotate hangs while waiting for an input.
++         * Redirect input from an empty file (or /dev/null) to avoid that behavior.
++         */
++        base.add("<"); //$NON-NLS-1$
++        base.add("/dev/null"); //$NON-NLS-1$
++
+         //(Annotate string per symbol)
+         return base.toArray( new String[base.size()] );
+     }
+@@ -528,16 +535,45 @@ public class PerfCore {
+                             }
+                             currentSym = (PMSymbol)s;
+                             String[] annotateCmd;
++                            /*
++                             *  BZ1276486 - perf annotate hanging on RHEL 7.2
++                             *  There is a bug in perf whereby -i is ignored.  Don't pass it for the time-being.
++                             */ 
+                             if (workingDir == null) {
+-                                annotateCmd = getAnnotateString(config, currentDso.getName(), currentSym.getName().substring(4), perfDataLoc, oldPerfVersion);
++                                annotateCmd = getAnnotateString(config, currentDso.getName(), currentSym.getName().substring(4), null, oldPerfVersion);
+                             } else {
+-                                String perfDefaultDataLoc = workingDir + "/" + PerfPlugin.PERF_DEFAULT_DATA;
+-                                annotateCmd = getAnnotateString(config, currentDso.getName(), currentSym.getName().substring(4), perfDefaultDataLoc, oldPerfVersion);
++                                annotateCmd = getAnnotateString(config, currentDso.getName(), currentSym.getName().substring(4), null, oldPerfVersion);
+                             }
+ 
+                             try {
+-                                if(project==null) p = Runtime.getRuntime().exec(annotateCmd);
+-                                else p = RuntimeProcessFactory.getFactory().exec(annotateCmd, project);
++                                if(project==null) {
++                                    p = Runtime.getRuntime().exec(annotateCmd);
++                                } else {
++                                    StringBuffer sb = new StringBuffer();
++                                    ArrayList<String> al = new ArrayList<>();
++                                    /*
++                                     *  BZ1276486 - perf annotate hanging on RHEL 7.2
++                                     *  There is an upstream bug in perf whereby -i is ignored.
++                                     *
++                                     *  Wrap the whole Perf annotate line as a single argument of sh command
++                                     *   so that any IO redirection will take effect. Change to perf data location before running perf annotate.
++                                     *  It results on a command string as 'sh', '-c', 'cd <perfLocdir> && perf annotate <args> < /dev/null'
++                                     */
++                                    al.add("sh"); //$NON-NLS-1$
++                                    al.add("-c"); //$NON-NLS-1$
++                                    if(workingDir != null) {
++                                        sb.append("cd " + workingDir.toOSString() + " && "); //$NON-NLS-1$ //$NON-NLS-2$
++                                    } else {
++                                        IPath perfDataLocDir = new Path(perfDataLoc).removeLastSegments(1);
++                                        sb.append("cd " + perfDataLocDir.toOSString() + " && "); //$NON-NLS-1$ //$NON-NLS-2$
++                                    }
++                                    for(int i=0; i<annotateCmd.length; i++) {
++                                        sb.append(annotateCmd[i]);
++                                        sb.append(" "); //$NON-NLS-1$
++                                    }
++                                    al.add(sb.toString());
++                                    p = RuntimeProcessFactory.getFactory().exec(al.toArray(new String[]{}), project);
++                                }
+                                 input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                                 error = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+                             } catch (IOException e) {
+@@ -674,4 +710,4 @@ public class PerfCore {
+                 e.getMessage());
+         PerfPlugin.getDefault().getLog().log(status);
+     }
+-}
+\ No newline at end of file
++}

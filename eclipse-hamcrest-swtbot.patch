@@ -1,0 +1,12 @@
+diff --git a/perf/org.eclipse.linuxtools.perf.swtbot.tests/META-INF/MANIFEST.MF b/perf/org.eclipse.linuxtools.perf.swtbot.tests/META-INF/MANIFEST.MF
+index ed6c18e..2af05e4 100644
+--- a/perf/org.eclipse.linuxtools.perf.swtbot.tests/META-INF/MANIFEST.MF
++++ b/perf/org.eclipse.linuxtools.perf.swtbot.tests/META-INF/MANIFEST.MF
+@@ -11,5 +11,6 @@
+ Require-Bundle: org.junit,
+  org.eclipse.linuxtools.profiling.tests,
+  org.eclipse.swtbot.eclipse.finder,
+- org.apache.log4j
++ org.apache.log4j,
++ org.hamcrest.core
+ Import-Package: org.eclipse.swtbot.swt.finder.junit

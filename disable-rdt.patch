@@ -1,0 +1,50 @@
+diff --git a/profiling/org.eclipse.linuxtools.profiling.remote-feature/feature.xml b/profiling/org.eclipse.linuxtools.profiling.remote-feature/feature.xml
+index 77e4fd9..6213061 100644
+--- a/profiling/org.eclipse.linuxtools.profiling.remote-feature/feature.xml
++++ b/profiling/org.eclipse.linuxtools.profiling.remote-feature/feature.xml
+@@ -33,12 +33,14 @@
+       <import feature="org.eclipse.linuxtools.profiling" version="0.8.0" match="greaterOrEqual"/>
+    </requires>
+ 
++   <!--
+    <plugin
+          id="org.eclipse.linuxtools.rdt.proxy"
+          download-size="0"
+          install-size="0"
+          version="0.0.0"
+          unpack="false"/>
++   -->
+ 
+    <plugin
+          id="org.eclipse.linuxtools.ssh.proxy"
+@@ -47,11 +49,13 @@
+          version="0.0.0"
+          unpack="false"/>
+ 
++   <!--
+    <plugin
+          id="org.eclipse.linuxtools.profiling.launch.ui.rdt.proxy"
+          download-size="0"
+          install-size="0"
+          version="0.0.0"
+          unpack="false"/>
++   -->
+ 
+ </feature>
+diff -up org.eclipse.linuxtools-e866fae2d8a67985051ef8afba50ed37b4eea105/profiling/pom.xml.fix org.eclipse.linuxtools-e866fae2d8a67985051ef8afba50ed37b4eea105/profiling/pom.xml
+--- org.eclipse.linuxtools-e866fae2d8a67985051ef8afba50ed37b4eea105/profiling/pom.xml.fix	2014-05-22 22:50:30.229356876 -0400
++++ org.eclipse.linuxtools-e866fae2d8a67985051ef8afba50ed37b4eea105/profiling/pom.xml	2014-05-22 22:51:14.446065002 -0400
+@@ -50,13 +50,11 @@
+     <module>org.eclipse.linuxtools.profiling.docs</module>
+     <module>org.eclipse.linuxtools.profiling-feature</module>
+     <module>org.eclipse.linuxtools.profiling.launch</module>
+-    <module>org.eclipse.linuxtools.profiling.launch.ui.rdt.proxy</module>
+     <module>org.eclipse.linuxtools.profiling.provider.tests</module>
+     <module>org.eclipse.linuxtools.profiling.remote-feature</module>
+     <module>org.eclipse.linuxtools.profiling.tests</module>
+     <module>org.eclipse.linuxtools.profiling.ui</module>
+     <module>org.eclipse.linuxtools.profiling.ui.capability</module>
+-    <module>org.eclipse.linuxtools.rdt.proxy</module>
+     <module>org.eclipse.linuxtools.ssh.proxy</module>
+   </modules>
+ 

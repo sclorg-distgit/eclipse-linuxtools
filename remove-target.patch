@@ -1,0 +1,37 @@
+diff -up ./pom.xml.fix ./pom.xml
+--- ./pom.xml.fix	2014-09-19 15:27:02.592366937 -0400
++++ ./pom.xml	2014-09-19 15:27:19.252599177 -0400
+@@ -52,7 +52,6 @@
+     <mirror-repo-name>update-3.2</mirror-repo-name>
+     <tycho-version>0.22.0</tycho-version>
+     <tycho-extras-version>0.22.0</tycho-extras-version>
+-    <target-platform>linuxtools-e4.4</target-platform>
+     <sonar.core.codeCoveragePlugin>jacoco</sonar.core.codeCoveragePlugin>
+     <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+     <sonar.jacoco.reportPath>${project.basedir}/../../target/jacoco.exec</sonar.jacoco.reportPath>
+@@ -214,14 +213,6 @@
+               <arch>x86_64</arch>
+             </environment>
+           </environments>
+-          <target>
+-            <artifact>
+-              <groupId>org.eclipse.linuxtools</groupId>
+-              <artifactId>org.eclipse.linuxtools.target</artifactId>
+-              <classifier>${target-platform}</classifier>
+-              <version>1.0.0</version>
+-            </artifact>
+-          </target>
+         </configuration>
+       </plugin>
+       <plugin>
+diff -up ./releng/pom.xml.fix ./releng/pom.xml
+--- ./releng/pom.xml.fix	2014-09-19 15:27:29.805746292 -0400
++++ ./releng/pom.xml	2014-09-19 15:27:36.433838686 -0400
+@@ -44,7 +44,6 @@
+ 
+   <modules>
+     <module>org.eclipse.linuxtools.releng-site</module>
+-    <module>org.eclipse.linuxtools.target</module>
+   </modules>
+ 
+ </project>

@@ -2,44 +2,41 @@
 %{!?scl:%global pkg_name %{name}}
 %{?java_common_find_provides_and_requires}
 
-%global eclipse_dropin   %{_datadir}/eclipse/dropins
+%global baserelease 2
 
 Name:           %{?scl_prefix}eclipse-linuxtools
-Version:        4.1.0
-Release:        4.bs2%{?dist}
+Version:        4.2.2
+Release:        1.%{baserelease}%{?dist}
 Summary:        Linux specific Eclipse plugins
 
 License:        EPL
 URL:            http://eclipse.org/linuxtools/
-Source0:        http://git.eclipse.org/c/linuxtools/org.eclipse.linuxtools.git/snapshot/org.eclipse.linuxtools-%{version}.tar.xz
+Source0:        https://git.eclipse.org/c/linuxtools/org.eclipse.linuxtools.git/snapshot/org.eclipse.linuxtools-%{version}.tar.xz
 Source1:        libstdc++-v3.libhover
 
 Patch0: eclipse-libhover-local-libstdcxx.patch
 Patch1: fix-jgit-issue.patch
-Patch2: eclipse-hamcrest-swtbot.patch
 Patch4: add-base-rhel-tools-path.patch
-Patch5: docker-selinux.patch
-Patch6: fix-systemtap-tests.patch
-Patch7: fix-docker-image-build.patch
-Patch8: fix-perf-annotate.patch
 
-BuildRequires: %{?scl_prefix}tycho >= 0.21.0
+BuildRequires: %{?scl_prefix}tycho
 BuildRequires: %{?scl_prefix}tycho-extras
 BuildRequires: %{?scl_prefix}eclipse-cdt
 BuildRequires: %{?scl_prefix}eclipse-jdt
 BuildRequires: %{?scl_prefix}swt-chart >= 0.9.0
 BuildRequires: %{?scl_prefix}eclipse-remote
-BuildRequires: %{?scl_prefix}docker-client >= 3.1.1
 BuildRequires: %{?scl_prefix}eclipse-license
 BuildRequires: %{?scl_prefix}eclipse-swtbot
 BuildRequires: %{?scl_prefix}eclipse-gef
 BuildRequires: %{?scl_prefix_maven}exec-maven-plugin
 BuildRequires: %{?scl_prefix}eclipse-ptp-rdt-sync
 BuildRequires: %{?scl_prefix_java_common}nekohtml
+# Docker not available on F22
+%if 0%{?fedora} != 22
+BuildRequires: %{?scl_prefix}docker-client >= 3.1.9
 BuildRequires: %{?scl_prefix}glassfish-jax-rs-api
+%endif
 
 BuildArch: noarch
-Obsoletes: %{?scl_prefix}eclipse-linuxprofilingframework < 2.0.0
 
 %description
 The Linux Tools project is a two-faceted project. Firstly, it develops tools 
@@ -79,14 +76,25 @@ Summary:  Man page viewer
 Plugin providing common interface for displaying a man page in a view or 
 fetching its content for embedded display purposes (e.g hover help).
 
+# Docker not available on F22
+%if 0%{?fedora} != 22
+
 %package -n %{?scl_prefix}eclipse-linuxtools-docker
 
 Summary:  Docker Tooling
-Requires: %{?scl_prefix_java_common}slf4j-simple
 
 %description -n %{?scl_prefix}eclipse-linuxtools-docker
-Plugin providing support for managing Docker Containers and Images in
+Plugin providing support for managing Docker containers and images in
 Eclipse.
+
+%package -n %{?scl_prefix}eclipse-linuxtools-vagrant
+
+Summary:  Vagrant Tooling
+
+%description -n %{?scl_prefix}eclipse-linuxtools-vagrant
+Plugin providing support for managing Vagrant machines and mages in
+Eclipse.
+%endif
 
 %package -n %{?scl_prefix}eclipse-gcov
 
@@ -121,7 +129,7 @@ Eclipse plugins to integrate Perf's profiling capabilities with the CDT.
 %package -n %{?scl_prefix}eclipse-valgrind
 
 Summary:   Valgrind Tools Integration for Eclipse
-Requires:  valgrind
+Requires:  %{?scl_prefix}valgrind
 
 %description -n %{?scl_prefix}eclipse-valgrind
 This package for Eclipse allows users to launch their C/C++ Development Tools
@@ -131,8 +139,6 @@ projects using the Valgrind tool suite and presents the results in the IDE.
 
 Summary:   Systemtap Tools Integration for Eclipse
 Requires:  %{?scl_prefix}systemtap
-Obsoletes: %{?scl_prefix}eclipse-callgraph < 2.0.0
-Obsoletes: %{?scl_prefix}eclipse-systemtapgui < 2.0.0
 
 %description -n %{?scl_prefix}eclipse-systemtap
 Integrate Systemtap's profiling and tracing capabilities with the CDT.
@@ -178,12 +184,7 @@ set -e -x
 %setup -q -n org.eclipse.linuxtools-%{version}
 %patch0 -p1
 %patch1 -p1
-%patch2 -p1
 %patch4
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
 
 sed -i 's/\-i //' containers/org.eclipse.linuxtools.docker.core/resources/script.sh
 
@@ -192,25 +193,61 @@ mkdir data
 cp %{SOURCE1} data/.
 popd
 
-sed -i -e 's|org\.junit;bundle-version.*|org.junit,|' \
-  profiling/org.eclipse.linuxtools.remote.proxy.tests/META-INF/MANIFEST.MF \
-  containers/org.eclipse.linuxtools.docker.ui.tests/META-INF/MANIFEST.MF
-sed -i -e '9i\ javax.annotation-api;bundle-version="1.2.0",' \
-  containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
-
 %pom_remove_plugin org.jacoco:jacoco-maven-plugin
+
+# org.assertj -> org.assertj.core
+# org.mockito -> org.mockito.mockito-core
+sed -i -e 's/org.assertj/org.assertj.core/' containers/org.eclipse.linuxtools.docker.ui.tests/META-INF/MANIFEST.MF
 
 # Don't use target platform
 %pom_disable_module releng
-%pom_disable_module org.eclipse.linuxtools.changelog.ui.tests changelog 
+%pom_disable_module org.eclipse.linuxtools.changelog.ui.tests changelog
+%pom_disable_module org.eclipse.linuxtools.docker.ui.tests containers
+%pom_disable_module org.eclipse.linuxtools.docker.tests.hamcrest-wrap containers
 sed -i '/<target>/,/<\/target>/ d' pom.xml
 
 #fix javax.ws.rs api dependencly declaration
 sed -i 's/javax.ws.rs/javax.ws.rs-api/' containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
 
-%mvn_package ":*-parent" __noinstall
+# Fix uses conflict introduced by EBZ #474606
+sed -i -e '9i\ javax.annotation-api;bundle-version="1.2.0",' \
+containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
+
+%if 0%{?fedora} >= 24
+# Support docker-client 3.5.9
+for f in `find containers/org.eclipse.linuxtools.docker.core -name "*.java"`; do
+  sed -i 's|BuildParameter|BuildParam|g
+          s|LogsParameter|LogsParam|g
+          s|BuildParam\.FORCE_RM|BuildParam\.forceRm()|g
+          s|BuildParam\.QUIET|BuildParam\.quiet()|g
+          s|BuildParam\.NO_CACHE|BuildParam\.noCache()|g
+          s|BuildParam\.NO_RM|BuildParam\.rm(false)|g
+          s|LogsParam\.FOLLOW|LogsParam\.follow()|g
+          s|LogsParam\.STDOUT|LogsParam\.stdout()|g
+          s|LogsParam\.STDERR|LogsParam\.stderr()|g
+          s|LogsParam\.TIMESTAMPS|LogsParam\.timestamps()|g
+          ' $f
+done
+%endif
+
+# Fix junit issue
+sed -i -e 's/org.junit;bundle-version="4.12.0"/org.junit;bundle-version="4.11.0"/' profiling/org.eclipse.linuxtools.remote.proxy.tests/META-INF/MANIFEST.MF
+sed -i -e 's/org.junit;bundle-version="4.12.0"/org.junit;bundle-version="4.11.0"/' valgrind/org.eclipse.linuxtools.valgrind.core.tests/META-INF/MANIFEST.MF
+
+# Disable intermittant swtbot test
+sed -i -e '/SourceDisassemblyViewTest/d' perf/org.eclipse.linuxtools.perf.swtbot.tests/src/org/eclipse/linuxtools/internal/perf/swtbot/tests/AllPerfTests.java
+
+# Docker not available on F22
+%if 0%{?fedora} == 22
+%pom_disable_module containers
+%pom_disable_module vagrant
+%endif
+
+%mvn_package "::pom::" __noinstall
 %mvn_package ":*.{test,tests}" linuxtools-tests
+%mvn_package ":*.tests.hamcrest-wrap" linuxtools-tests
 %mvn_package ":org.eclipse.linuxtools.docker*" docker
+%mvn_package ":org.eclipse.linuxtools.vagrant*" vagrant
 %mvn_package "org.eclipse.linuxtools{,.profiling}:" core
 %mvn_package "org.eclipse.linuxtools.javadocs:" javadocs
 %mvn_package "org.eclipse.linuxtools.changelog:" changelog
@@ -246,7 +283,6 @@ export JAVA_HOME=/usr/lib/jvm/java-1.8.0
 %{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
 set -e -x
 %mvn_install
-%{?scl:EOF}
 
 # remove broken symlink on maven30 jar
 # (this is an optional dep of log4j, but we can't depend on maven30 at runtime)
@@ -268,12 +304,14 @@ for p in changelog gcov gprof oprofile perf systemtap valgrind  ; do
   install -m644 -D $p/eclipse-$p.metainfo.xml %{buildroot}%{_datadir}/appdata/eclipse-$p.metainfo.xml
 done
 
-cat << EOF > eclipse-runLinuxToolsTestBundles
+cat << EOFSCRIPT > eclipse-runLinuxToolsTestBundles
 #! /bin/bash
 eclipse-runTestBundles %{_javadir}/linuxtools-tests
-EOF
+EOFSCRIPT
 
 install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclipse-runLinuxToolsTestBundles
+%{?scl:EOF}
+
 
 %files -f .mfiles-core
 
@@ -290,7 +328,13 @@ install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclips
 %files -n %{?scl_prefix}eclipse-gprof -f .mfiles-gprof
 %{_datadir}/appdata/eclipse-gprof.metainfo.xml
 
+# Docker not available on F22
+%if 0%{?fedora} != 22
+
 %files -n %{?scl_prefix}eclipse-linuxtools-docker -f .mfiles-docker
+
+%files -n %{?scl_prefix}eclipse-linuxtools-vagrant -f .mfiles-vagrant
+%endif
 
 %files -n %{?scl_prefix}eclipse-oprofile -f .mfiles-oprofile
 %{_root_datadir}/polkit-1/actions/org.eclipse.linuxtools.oprofile.policy
@@ -314,23 +358,63 @@ install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclips
 %{_bindir}/eclipse-runLinuxToolsTestBundles
 
 %changelog
-* Wed Nov 04 2015 Jeff Johnston <jjohnstn@redhat.com> - 4.1.0-4
-- Resolve problem with RHE 7.2 perf ignoring -i option for annotate.
-- Resolves: rhbz#1276486
+* Wed Apr 06 2016 Mat Booth <mat.booth@redhat.com> - 4.2.2-1.2
+- Disable intermittent swtbot test in perf tools, rhbz#1315712
+- Rebuild against new bouncycastle packages, to fix broken symlinks
+  in tests subpackage, rhbz#1311007
 
-* Mon Nov 02 2015 Roland Grunberg <rgrunber@redhat.com> - 4.1.0-3
-- Resolve issues with docker script, and image build validation.
-- Resolves: rhbz#1259371, rhbz#1276303
-
-* Fri Oct 16 2015 Jeff Johnston <jjohnstn@redhat.com> - 4.1.0-2
-- Fix problem with mounting volumes in Docker and SELinux
-- resolves #rhbz1270221
-
-* Wed Oct 14 2015 Mat Booth <mat.booth@redhat.com> - 4.1.0-1.2
-- Explicitly require javax.annotations bundle in docker core
-
-* Tue Oct 13 2015 Mat Booth <mat.booth@redhat.com> - 4.1.0-1.1
+* Sat Apr 02 2016 Mat Booth <mat.booth@redhat.com> - 4.2.2-1.1
 - Import latest from Fedora
+
+* Tue Mar 29 2016 Mat Booth <mat.booth@redhat.com> - 4.2.2-1
+- Update to 4.2.2 release
+
+* Mon Mar 21 2016 Mat Booth <mat.booth@redhat.com> - 4.2.1-4.1
+- Import latest from Fedora
+
+* Thu Mar 10 2016 Mat Booth <mat.booth@redhat.com> - 4.2.1-4
+- Don't build docker/vagrant on F22
+
+* Thu Mar 10 2016 Mat Booth <mat.booth@redhat.com> - 4.2.1-3
+- Only support docker-client > 3.1 on Fedora > 23
+
+* Thu Mar 10 2016 Mat Booth <mat.booth@redhat.com> - 4.2.1-2
+- Drop unnecessary obsoletes
+- Additional requires for tests
+
+* Mon Feb 29 2016 Alexander Kurtakov <akurtako@redhat.com> 4.2.1-1
+- Update to 4.2.1 final release.
+
+* Tue Feb 09 2016 Mat Booth <mat.booth@redhat.com> - 4.2.1-0.3.gitc898d62
+- Fix unowned directory
+
+* Tue Feb 09 2016 Mat Booth <mat.booth@redhat.com> - 4.2.1-0.2.gitc898d62
+- Rebuild to regenerate symlinks on deps that moved to rh-java-common
+
+* Wed Feb 03 2016 Fedora Release Engineering <releng@fedoraproject.org> - 4.2.1-0.2.gitc898d62
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
+* Fri Jan 22 2016 Sopot Cela <scela@redhat.com> - 4.2.1-0.1.gitc898d62
+- Upgrade to pre 4.2.1 release
+
+* Fri Jan 22 2016 Sopot Cela <scela@redhat.com> - 4.2.0-2.2
+- Removed Requires for Vagrant
+
+* Wed Jan 20 2016 Roland Grunberg <rgrunber@redhat.com> - 4.2.0-3
+- Support docker-client 3.5.9.
+
+* Wed Jan 20 2016 Sopot Cela <scela@redhat.com> - 4.2.0-2.1
+- Import latest from Fedora
+
+* Thu Dec 17 2015 Mat Booth <mat.booth@redhat.com> - 4.2.0-2
+- Add requirement on vagrant for vagrant tooling.
+
+* Thu Dec 17 2015 Mat Booth <mat.booth@redhat.com> - 4.2.0-1
+- Update to 4.2.0 release.
+- Add vagrant tooling package.
+
+* Wed Oct 14 2015 Roland Grunberg <rgrunber@redhat.com> - 4.1.0-2
+- Explicitly require javax.annotations bundle in docker core.
 
 * Mon Sep 28 2015 Sopot Cela <scela@redhat.com> - 4.1.0-1
 - Update to 4.1.0 (Mars SR1).

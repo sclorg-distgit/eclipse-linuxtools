@@ -1,5 +1,3 @@
-diff --git a/containers/pom.xml b/containers/pom.xml
-index a073d99..52cbe18 100644
 --- a/containers/pom.xml
 +++ b/containers/pom.xml
 @@ -37,9 +37,9 @@
@@ -31,3 +29,31 @@ index a073d99..52cbe18 100644
  
  			<plugin>
 
+--- a/vagrant/pom.xml
++++ b/vagrant/pom.xml
+@@ -35,9 +35,9 @@
+ 				<artifactId>tycho-packaging-plugin</artifactId>
+ 				<version>${tycho-version}</version>
+ 				<configuration>
+-					<sourceReferences>
++					<!-- sourceReferences>
+ 						<generate>true</generate>
+-					</sourceReferences>
++					</sourceReferences -->
+ 					<archiveSite>true</archiveSite>
+ 					<environments>
+ 						<environment>
+@@ -68,11 +68,11 @@
+ 					</environments>
+ 				</configuration>
+ 				<dependencies>
+-					<dependency>
++					<!-- dependency>
+ 						<groupId>org.eclipse.tycho.extras</groupId>
+ 						<artifactId>tycho-sourceref-jgit</artifactId>
+ 						<version>${tycho-extras-version}</version>
+-					</dependency>
++					</dependency -->
+ 				</dependencies>
+ 			</plugin>
+ 

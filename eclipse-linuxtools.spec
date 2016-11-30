@@ -2,7 +2,7 @@
 %{!?scl:%global pkg_name %{name}}
 %{?java_common_find_provides_and_requires}
 
-%global baserelease 2
+%global baserelease 3
 
 %global git_tag 5.0.0b
 
@@ -88,7 +88,6 @@ Eclipse.
 %package -n %{?scl_prefix}eclipse-linuxtools-vagrant
 
 Summary:  Vagrant Tooling
-Requires: vagrant
 
 %description -n %{?scl_prefix}eclipse-linuxtools-vagrant
 Plugin providing support for managing Vagrant machines and mages in
@@ -331,6 +330,9 @@ install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclips
 %{_bindir}/eclipse-runLinuxToolsTestBundles
 
 %changelog
+* Fri Jul 29 2016 Mat Booth <mat.booth@redhat.com> - 5.0.0-2.3
+- Fix vagrant package is uninstallable
+
 * Fri Jul 29 2016 Mat Booth <mat.booth@redhat.com> - 5.0.0-2.2
 - Drop dep on assertj
 - Add missing dep on mockito

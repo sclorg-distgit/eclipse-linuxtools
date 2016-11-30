@@ -1,0 +1,41 @@
+diff -up ./profiling/org.eclipse.linuxtools.tools.launch.core/plugin.properties.fix ./profiling/org.eclipse.linuxtools.tools.launch.core/plugin.properties
+--- ./profiling/org.eclipse.linuxtools.tools.launch.core/plugin.properties.fix	2013-11-19 17:39:16.596385931 -0500
++++ ./profiling/org.eclipse.linuxtools.tools.launch.core/plugin.properties	2013-11-19 17:39:52.627378883 -0500
+@@ -10,3 +10,4 @@
+ #################################################################################
+ bundleName=Tools Launcher Core
+ provider=Eclipse Linux Tools
++BaseRHEL=Base RHEL Tools
+diff -up ./profiling/org.eclipse.linuxtools.tools.launch.core/plugin.xml.fix ./profiling/org.eclipse.linuxtools.tools.launch.core/plugin.xml
+--- ./profiling/org.eclipse.linuxtools.tools.launch.core/plugin.xml.fix	2013-11-19 17:36:47.926415013 -0500
++++ ./profiling/org.eclipse.linuxtools.tools.launch.core/plugin.xml	2013-11-19 17:39:06.732387851 -0500
+@@ -2,4 +2,10 @@
+ <?eclipse version="3.4"?>
+ <plugin>
+    <extension-point id="LinuxtoolsPathOptions" name="LinuxtoolsPathOptions" schema="schema/LinuxtoolsPathOptions.exsd"/>
++   <extension point="org.eclipse.linuxtools.tools.launch.core.LinuxtoolsPathOptions">
++      <option name="%BaseRHEL"
++            path="/usr/bin"
++            default="false">
++      </option>
++   </extension>
+ </plugin>
+diff --git profiling/org.eclipse.linuxtools.tools.launch.core/src/org/eclipse/linuxtools/tools/launch/core/factory/LinuxtoolsProcessFactory.java profiling/org.eclipse.linuxtools.tools.launch.core/src/org/eclipse/linuxtools/tools/launch/core/factory/LinuxtoolsProcessFactory.java
+index a553bae..fb4aaf2 100644
+--- profiling/org.eclipse.linuxtools.tools.launch.core/src/org/eclipse/linuxtools/tools/launch/core/factory/LinuxtoolsProcessFactory.java
++++ profiling/org.eclipse.linuxtools.tools.launch.core/src/org/eclipse/linuxtools/tools/launch/core/factory/LinuxtoolsProcessFactory.java
+@@ -88,6 +88,14 @@ public abstract class LinuxtoolsProcessFactory {
+             newPath.append(systemPath);
+         }
+ 
++        /*
++         * '/usr/bin' is set by 'Base RHEL Tools'
++         * Disable any XDG_DATA_DIRS in this case.
++         */
++        if (ltPath.equals("/usr/bin")) {
++            envMap.remove("XDG_DATA_DIRS");
++        }
++
+         // Overwrite/update map of system environment variables with ones from the provided array
+         if (newPath.length() > PATH_EQUAL.length()) {
+             envMap.put(PATH, newPath.substring(PATH_EQUAL.length()));

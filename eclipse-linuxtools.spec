@@ -4,11 +4,11 @@
 
 %global baserelease 3
 
-%global git_tag 5.0.0b
+%global git_tag 15142db72148e2b01292f8a61f1ca013c175ff72
 
 Name:           %{?scl_prefix}eclipse-linuxtools
-Version:        5.0.0
-Release:        2.%{baserelease}%{?dist}
+Version:        5.1.0
+Release:        0.1.git15142db.%{baserelease}%{?dist}
 Summary:        Linux specific Eclipse plugins
 
 License:        EPL
@@ -19,6 +19,7 @@ Source1:        libstdc++-v3.libhover
 Patch0: eclipse-libhover-local-libstdcxx.patch
 Patch1: fix-jgit-issue.patch
 Patch2: add-base-rhel-tools-path.patch
+Patch3: fix-terminal-on-newer-jersey.patch
 
 BuildRequires: %{?scl_prefix}tycho
 BuildRequires: %{?scl_prefix}tycho-extras
@@ -182,6 +183,7 @@ set -e -x
 %patch0 -p1
 %patch1 -p1
 %patch2
+%patch3 -p1
 
 pushd libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx
 mkdir data
@@ -271,9 +273,13 @@ set -e -x
 %mvn_install
 
 # Install opcontrol wrapper polkit permissions policy
-install -d -m 755 %{buildroot}%{_datadir}/polkit-1/actions
+install -d -m 755 %{buildroot}%{_root_datadir}/polkit-1/actions
 install -D -m 644 oprofile/org.eclipse.linuxtools.oprofile.core/natives/linux/scripts/org.eclipse.linuxtools.oprofile.policy \
-  %{buildroot}%{_datadir}/polkit-1/actions/org.eclipse.linuxtools.oprofile.policy
+  %{buildroot}%{_root_datadir}/polkit-1/actions/org.eclipse.linuxtools.oprofile.policy
+install -D -m 644 oprofile/org.eclipse.linuxtools.oprofile.core/natives/linux/scripts/org.eclipse.linuxtools.oprofile.policy \
+  %{buildroot}%{_root_datadir}/polkit-1/actions/org.eclipse.linuxtools.oprofile-dts6.policy
+sed -i 's|/usr/bin/opcontrol|/opt/rh/devtoolset-6/root/usr/bin/opcontrol|
+        s|oprofile|oprofile-dts6|' %{buildroot}%{_root_datadir}/polkit-1/actions/org.eclipse.linuxtools.oprofile-dts6.policy
 sed -i '/natives\/linux\/scripts\/opcontrol/ s|644|755|' .mfiles-oprofile
 
 # Appstream addon metadata
@@ -310,7 +316,8 @@ install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclips
 %files -n %{?scl_prefix}eclipse-linuxtools-vagrant -f .mfiles-vagrant
 
 %files -n %{?scl_prefix}eclipse-oprofile -f .mfiles-oprofile
-%{_datadir}/polkit-1/actions/org.eclipse.linuxtools.oprofile.policy
+%{_root_datadir}/polkit-1/actions/org.eclipse.linuxtools.oprofile.policy
+%{_root_datadir}/polkit-1/actions/org.eclipse.linuxtools.oprofile-dts6.policy
 %{_datadir}/appdata/eclipse-oprofile.metainfo.xml
 
 %files -n %{?scl_prefix}eclipse-perf -f .mfiles-perf
@@ -330,16 +337,21 @@ install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclips
 %{_bindir}/eclipse-runLinuxToolsTestBundles
 
 %changelog
-* Fri Jul 29 2016 Mat Booth <mat.booth@redhat.com> - 5.0.0-2.3
-- Fix vagrant package is uninstallable
+* Wed Sep 07 2016 Roland Grunberg <rgrunber@redhat.com> - 5.1.0-0.1.git15142db.3
+- Fix Docker Tooling terminal on newer versions of Jersey.
 
-* Fri Jul 29 2016 Mat Booth <mat.booth@redhat.com> - 5.0.0-2.2
-- Drop dep on assertj
-- Add missing dep on mockito
-- Fix some missed self-requires
+* Wed Sep 07 2016 Mat Booth <mat.booth@redhat.com> - 5.1.0-0.1.git15142db.2
+- Fix assertj, mockito, vagrant, junit deps
+- Fix oprofile polkit policies to work with DTS6
 
-* Fri Jul 29 2016 Mat Booth <mat.booth@redhat.com> - 5.0.0-2.1
+* Wed Sep 07 2016 Mat Booth <mat.booth@redhat.com> - 5.1.0-0.1.git15142db.1
 - Auto SCL-ise package for rh-eclipse46 collection
+
+* Tue Sep 06 2016 Mat Booth <mat.booth@redhat.com> - 5.1.0-0.1.git15142db
+- Update to 5.1.0 release candidate
+
+* Wed Aug 03 2016 Jeff Johnston <jjohnstn@redhat.com> - 5.0.0-3
+- Fix Bug 459549 regarding gcov not matching command-line results
 
 * Thu Jun 30 2016 Mat Booth <mat.booth@redhat.com> - 5.0.0-2
 - Bump requirement on docker-client to fixed version

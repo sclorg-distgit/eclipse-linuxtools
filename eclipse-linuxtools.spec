@@ -2,13 +2,13 @@
 %{!?scl:%global pkg_name %{name}}
 %{?java_common_find_provides_and_requires}
 
-%global baserelease 3
+%global baserelease 2
 
-%global git_tag 15142db72148e2b01292f8a61f1ca013c175ff72
+%global git_tag %{version}a
 
 Name:           %{?scl_prefix}eclipse-linuxtools
-Version:        5.1.0
-Release:        0.1.git15142db.%{baserelease}%{?dist}
+Version:        5.2.0
+Release:        1.%{baserelease}%{?dist}
 Summary:        Linux specific Eclipse plugins
 
 License:        EPL
@@ -206,17 +206,6 @@ sed -i '/<target>/,/<\/target>/ d' pom.xml
 #fix javax.ws.rs api dependencly declaration
 sed -i 's/javax.ws.rs/javax.ws.rs-api/' containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
 
-# Fix uses conflict introduced by EBZ #474606
-sed -i -e '9i\ javax.annotation-api;bundle-version="1.2.0",' \
-containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
-
-# Fix junit versions
-sed -i -e '/org\.junit/s/4\.12\.0/4.11.0/' \
-  valgrind/org.eclipse.linuxtools.valgrind.core.tests/META-INF/MANIFEST.MF \
-  containers/org.eclipse.linuxtools.docker.ui.tests/META-INF/MANIFEST.MF \
-  profiling/org.eclipse.linuxtools.remote.proxy.tests/META-INF/MANIFEST.MF \
-  profiling/org.eclipse.linuxtools.rdt.proxy.tests/META-INF/MANIFEST.MF
-
 # Support docker-client >= 4
 sed -i 's|com.spotify.docker.client.DockerRequestException|com.spotify.docker.client.exceptions.DockerRequestException|g
 		s|com.spotify.docker.client.DockerException|com.spotify.docker.client.exceptions.DockerException|g
@@ -232,6 +221,10 @@ sed -i 's|jnr.unixsocket|com.github.jnr.unixsocket|g
 		s|jnr.enxio|com.github.jnr.enxio|g
 		' containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
 %endif
+
+# Relax dep on commons-compress
+sed -i -e '/commons.compress/s/1\.6\.0/1.5.0/' \
+  containers/org.eclipse.linuxtools.docker.ui/META-INF/MANIFEST.MF
 
 %mvn_package "::pom::" __noinstall
 %mvn_package ":*.{test,tests}" linuxtools-tests
@@ -337,6 +330,21 @@ install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclips
 %{_bindir}/eclipse-runLinuxToolsTestBundles
 
 %changelog
+* Thu Jan 19 2017 Mat Booth <mat.booth@redhat.com> - 5.2.0-1.2
+- Fix deps and oprofile policies
+
+* Thu Jan 19 2017 Mat Booth <mat.booth@redhat.com> - 5.2.0-1.1
+- Auto SCL-ise package for rh-eclipse46 collection
+
+* Wed Dec 21 2016 Alexander Kurtakov <akurtako@redhat.com> 5.2.0-1
+- Update to 5.2.0.
+
+* Tue Oct 04 2016 Mat Booth <mat.booth@redhat.com> - 5.1.0-1
+- Update to final release of 5.1.0
+
+* Wed Sep 07 2016 Roland Grunberg <rgrunber@redhat.com> - 5.1.0-0.2.git15142db
+- Fix Docker Tooling terminal on newer versions of Jersey.
+
 * Wed Sep 07 2016 Roland Grunberg <rgrunber@redhat.com> - 5.1.0-0.1.git15142db.3
 - Fix Docker Tooling terminal on newer versions of Jersey.
 

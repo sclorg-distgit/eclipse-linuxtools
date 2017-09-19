@@ -1,0 +1,40 @@
+From 7fe11de86824c6ecfc638e760492cfcf3d1e41a8 Mon Sep 17 00:00:00 2001
+From: Jeff Johnston
+Date: Thu, 6 Apr 2017 14:44:32 -0400
+Subject: Bug 514873 - Image Run Network Tab causes NPEs to occur in error log
+
+- switching network modes in the Run Image Launch tab causes
+  the binding of the radio buttons to issue a momentary
+  value of null which causes an NPE in the validation
+- fix the ImageRunNetworkModel to not accept null as a
+  new network mode and simply return
+
+Change-Id: I5b89d542122fb335fec3c1bca31730795e9a0da6
+Reviewed-on: https://git.eclipse.org/r/94600
+Tested-by: Hudson CI
+Reviewed-by: Jeff Johnston <jjohnstn@redhat.com>
+---
+ .../linuxtools/internal/docker/ui/wizards/ImageRunNetworkModel.java | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/containers/org.eclipse.linuxtools.docker.ui/src/org/eclipse/linuxtools/internal/docker/ui/wizards/ImageRunNetworkModel.java b/containers/org.eclipse.linuxtools.docker.ui/src/org/eclipse/linuxtools/internal/docker/ui/wizards/ImageRunNetworkModel.java
+index e6274cd..1687a8a 100644
+--- a/containers/org.eclipse.linuxtools.docker.ui/src/org/eclipse/linuxtools/internal/docker/ui/wizards/ImageRunNetworkModel.java
++++ b/containers/org.eclipse.linuxtools.docker.ui/src/org/eclipse/linuxtools/internal/docker/ui/wizards/ImageRunNetworkModel.java
+@@ -96,8 +96,10 @@ public class ImageRunNetworkModel extends BaseDatabindingModel {
+ 	}
+ 
+ 	public void setNetworkMode(final String networkMode) {
+-		firePropertyChange(NETWORK_MODE, this.networkMode,
+-				this.networkMode = networkMode);
++		if (networkMode != null) {
++			firePropertyChange(NETWORK_MODE, this.networkMode,
++					this.networkMode = networkMode);
++		}
+ 	}
+ 
+ 	/**
+-- 
+cgit v0.11.2-4-g4a35
+
+

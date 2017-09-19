@@ -2,7 +2,7 @@
 %{!?scl:%global pkg_name %{name}}
 %{?java_common_find_provides_and_requires}
 
-%global baserelease 2
+%global baserelease 3
 
 %global git_tag %{version}
 
@@ -19,7 +19,8 @@ Source1:        libstdc++-v3.libhover
 Patch0: eclipse-libhover-local-libstdcxx.patch
 Patch1: fix-jgit-issue.patch
 Patch2: fix-terminal-on-newer-jersey.patch
-Patch3: add-base-rhel-tools-path.patch
+Patch3: eclipse-linuxtools-ebz514873.patch
+Patch4: add-base-rhel-tools-path.patch
 
 BuildRequires: %{?scl_prefix}tycho
 BuildRequires: %{?scl_prefix}tycho-extras
@@ -184,7 +185,8 @@ set -e -x
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-%patch3
+%patch3 -p1
+%patch4
 
 pushd libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx
 mkdir data
@@ -337,6 +339,9 @@ install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclips
 %{_bindir}/eclipse-runLinuxToolsTestBundles
 
 %changelog
+* Fri Apr 07 2017 Mat Booth <mat.booth@redhat.com> - 5.3.1-1.3
+- Fix NPEs in the Image Run Network Tab
+
 * Fri Mar 31 2017 Mat Booth <mat.booth@redhat.com> - 5.3.1-1.2
 - Fix oprofile polkit policies and support for older jnr stack, resolves:
   rhbz#1404769

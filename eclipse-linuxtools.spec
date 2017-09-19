@@ -4,10 +4,10 @@
 
 %global baserelease 2
 
-%global git_tag %{version}a
+%global git_tag %{version}
 
 Name:           %{?scl_prefix}eclipse-linuxtools
-Version:        5.2.0
+Version:        5.3.1
 Release:        1.%{baserelease}%{?dist}
 Summary:        Linux specific Eclipse plugins
 
@@ -18,8 +18,8 @@ Source1:        libstdc++-v3.libhover
 
 Patch0: eclipse-libhover-local-libstdcxx.patch
 Patch1: fix-jgit-issue.patch
-Patch2: add-base-rhel-tools-path.patch
-Patch3: fix-terminal-on-newer-jersey.patch
+Patch2: fix-terminal-on-newer-jersey.patch
+Patch3: add-base-rhel-tools-path.patch
 
 BuildRequires: %{?scl_prefix}tycho
 BuildRequires: %{?scl_prefix}tycho-extras
@@ -35,6 +35,7 @@ BuildRequires: %{?scl_prefix}eclipse-ptp-rdt-sync
 BuildRequires: %{?scl_prefix_java_common}nekohtml
 BuildRequires: %{?scl_prefix}docker-client >= 4.0.6-2
 BuildRequires: %{?scl_prefix}glassfish-jax-rs-api
+
 BuildRequires: %{?scl_prefix}mockito
 
 BuildArch: noarch
@@ -177,13 +178,13 @@ Requires: %{?scl_prefix}eclipse-tests
 All test bundles for the Linux Tools project.
 
 %prep
-%{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+%{?scl:scl enable %{scl_maven} %{scl} - << "EOFSCL"}
 set -e -x
 %setup -q -n org.eclipse.linuxtools-%{git_tag}
 %patch0 -p1
 %patch1 -p1
-%patch2
-%patch3 -p1
+%patch2 -p1
+%patch3
 
 pushd libhover/org.eclipse.linuxtools.cdt.libhover.libstdcxx
 mkdir data
@@ -206,7 +207,13 @@ sed -i '/<target>/,/<\/target>/ d' pom.xml
 #fix javax.ws.rs api dependencly declaration
 sed -i 's/javax.ws.rs/javax.ws.rs-api/' containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
 
+# Fix uses conflict introduced by EBZ #474606
+sed -i -e '9i\ javax.annotation-api;bundle-version="1.2.0",' \
+containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
+
 # Support docker-client >= 4
+sed -i -e '/com.spotify/s/3\.6\.9/4.1.0/' \
+  containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
 sed -i 's|com.spotify.docker.client.DockerRequestException|com.spotify.docker.client.exceptions.DockerRequestException|g
 		s|com.spotify.docker.client.DockerException|com.spotify.docker.client.exceptions.DockerException|g
 		s|com.spotify.docker.client.DockerCertificateException|com.spotify.docker.client.exceptions.DockerCertificateException|g
@@ -215,11 +222,11 @@ sed -i 's|com.spotify.docker.client.DockerRequestException|com.spotify.docker.cl
               ' containers/org.eclipse.linuxtools.docker.core/src/org/eclipse/linuxtools/internal/docker/core/*.java \
 		containers/org.eclipse.linuxtools.docker.core/src/org/eclipse/linuxtools/docker/core/IDockerConnection.java \
                 containers/org.eclipse.linuxtools.docker.ui/src/org/eclipse/linuxtools/internal/docker/ui/{wizards,commands}/*.java
-%if 0%{?fedora} >= 25
-# Support upstream osgified jnr stack and docker-client 4.x
-sed -i 's|jnr.unixsocket|com.github.jnr.unixsocket|g
-		s|jnr.enxio|com.github.jnr.enxio|g
-		' containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
+%if 0%{?rhel}
+# Support older jnr stack
+sed -i 's|com.github.jnr.unixsocket|jnr.unixsocket|g
+               s|com.github.jnr.enxio|jnr.enxio|g
+               ' containers/org.eclipse.linuxtools.docker.core/META-INF/MANIFEST.MF
 %endif
 
 # Relax dep on commons-compress
@@ -250,18 +257,18 @@ rm -f *.sh
 echo '#!/bin/sh' > opcontrol
 echo 'exec pkexec /usr/bin/opcontrol ${1+"$@"}' >> opcontrol
 popd
-%{?scl:EOF}
+%{?scl:EOFSCL}
 
 
 %build
-%{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+%{?scl:scl enable %{scl_maven} %{scl} - << "EOFSCL"}
 set -e -x
 %mvn_build -j -f
-%{?scl:EOF}
+%{?scl:EOFSCL}
 
 
 %install
-%{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+%{?scl:scl enable %{scl_maven} %{scl} - << "EOFSCL"}
 set -e -x
 %mvn_install
 
@@ -286,7 +293,7 @@ eclipse-runTestBundles %{_javadir}/linuxtools-tests
 EOFSCRIPT
 
 install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclipse-runLinuxToolsTestBundles
-%{?scl:EOF}
+%{?scl:EOFSCL}
 
 
 %files -f .mfiles-core
@@ -330,11 +337,24 @@ install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclips
 %{_bindir}/eclipse-runLinuxToolsTestBundles
 
 %changelog
-* Thu Jan 19 2017 Mat Booth <mat.booth@redhat.com> - 5.2.0-1.2
-- Fix deps and oprofile policies
+* Fri Mar 31 2017 Mat Booth <mat.booth@redhat.com> - 5.3.1-1.2
+- Fix oprofile polkit policies and support for older jnr stack, resolves:
+  rhbz#1404769
 
-* Thu Jan 19 2017 Mat Booth <mat.booth@redhat.com> - 5.2.0-1.1
+* Fri Mar 31 2017 Mat Booth <mat.booth@redhat.com> - 5.3.1-1.1
 - Auto SCL-ise package for rh-eclipse46 collection
+
+* Fri Mar 31 2017 Mat Booth <mat.booth@redhat.com> - 5.3.1-1
+- Update to latest upstream release
+
+* Tue Mar 28 2017 Mat Booth <mat.booth@redhat.com> - 5.3.0-1
+- Update to latest upstream release
+
+* Fri Feb 10 2017 Fedora Release Engineering <releng@fedoraproject.org> - 5.2.0-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
+* Wed Jan 25 2017 Mat Booth <mat.booth@redhat.com> - 5.2.0-2
+- Rebuild to regenerate symlinks
 
 * Wed Dec 21 2016 Alexander Kurtakov <akurtako@redhat.com> 5.2.0-1
 - Update to 5.2.0.
@@ -344,16 +364,6 @@ install -D -m 755 eclipse-runLinuxToolsTestBundles %{buildroot}%{_bindir}/eclips
 
 * Wed Sep 07 2016 Roland Grunberg <rgrunber@redhat.com> - 5.1.0-0.2.git15142db
 - Fix Docker Tooling terminal on newer versions of Jersey.
-
-* Wed Sep 07 2016 Roland Grunberg <rgrunber@redhat.com> - 5.1.0-0.1.git15142db.3
-- Fix Docker Tooling terminal on newer versions of Jersey.
-
-* Wed Sep 07 2016 Mat Booth <mat.booth@redhat.com> - 5.1.0-0.1.git15142db.2
-- Fix assertj, mockito, vagrant, junit deps
-- Fix oprofile polkit policies to work with DTS6
-
-* Wed Sep 07 2016 Mat Booth <mat.booth@redhat.com> - 5.1.0-0.1.git15142db.1
-- Auto SCL-ise package for rh-eclipse46 collection
 
 * Tue Sep 06 2016 Mat Booth <mat.booth@redhat.com> - 5.1.0-0.1.git15142db
 - Update to 5.1.0 release candidate
